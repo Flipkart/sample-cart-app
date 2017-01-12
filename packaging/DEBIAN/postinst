@@ -1,0 +1,135 @@
+#!/bin/sh -e
+    
+        # nebula generates the structure for the postinst file. We just need to fill in the content
+        echoGreen "Setting deployment environment in service configuration to: $DEPLOYMENT_ENV"
+        sed -i "s#@deploymentEnv@#$DEPLOYMENT_ENV#g" @userFilesBaseDir@/service/run
+        
+        if [ -d "/etc/confd/conf.d" ]; then
+            echoGreen "Confd installation detected"
+            echoGreen "Setting deployment environment in confd toml files to: $DEPLOYMENT_ENV"
+            sed -i "s#@deploymentEnv@#$DEPLOYMENT_ENV#g" /etc/confd/conf.d/*.toml
+            
+            if [ -f "/etc/init.d/fk-config-service-confd" ]; then
+        
+                echoYellow "Stopping confd..."
+                sudo /etc/init.d/fk-config-service-confd stop
+        
+                # The ELB tends to be flaky sometimes. To avoid that from preventing service startup,
+                # we init confd a few times.
+            
+                confd_maximum_passes=5
+                confd_config_picked_up=false
+                confd_retry_interval_seconds=3
+                set +e
+                for i in $(seq 1 $confd_maximum_passes);
+                do
+                    echoYellow "> Forcing confd to pick up updated confd files. Pass:($i/$confd_maximum_passes)"
+                    sudo /etc/init.d/fk-config-service-confd init
+                    confd_last_exit_status=$?
+                    confd_init_status="> Exit status: $last_exit_status (0 means success)"
+                    if [ "$confd_last_exit_status" -eq 0 ]; then
+                        echoGreen "$confd_init_status"
+                        confd_config_picked_up=true
+                        break
+                    else
+                        echoRed "$confd_init_status"
+                        echoYellow "> Waiting for $confd_retry_interval_seconds seconds before trying again"
+                        sleep "$confd_retry_interval_seconds"
+                    fi
+                done
+                set -e
+                
+                if [ "$confd_config_picked_up" = false ] ; then
+                    echoRed "Confd was not able to pick up updates to the confd files in /etc/confd/conf.d."
+                    echoRed "This can happen for any of the following reasons: "
+                    echoRed "   1. You have an error in your toml/tmpl files"
+                    echoRed "   2. Your config service bucket name is wrong"
+                    echoRed "   3. Config service is unreachable"
+                    echoRed "Check /var/log/flipkart/config-service/confd-out.log for more details"
+                    echoRed "Aborting installation now as your configuration will be wrong otherwise." 
+                    exit 1
+                fi
+        
+                echoYellow "Starting confd..."
+                sudo /etc/init.d/fk-config-service-confd start
+            else
+                echoYellow "WARNING: Confd configuration files were detected in /etc/confd/conf.d, but no service was detected in /etc/init.d/fk-config-service-confd"
+                echoYellow "WARNING: This typically means that you have not installed the fk-config-service-confd package. Your confd files will not be utilized till you install this pacakge"
+            fi
+        else
+            echoYellow "Skipping confd setup as no confd configuration files were found in /etc/confd/conf.d"
+        fi
+        
+        echoYellow "Restarting dependencies to pick up any updated configuration..."
+        
+        echoYellow "Restarting cosmos-statsd..."
+        /etc/init.d/cosmos-statsd restart
+        
+        echoYellow "Restarting rsyslog..."
+        /etc/init.d/rsyslog restart
+        
+        service_dir="/etc/service/@packageName@"
+        service_log_dir="$service_dir/log"
+        
+        # Override the environment variables for daemontools
+        service_env="@userFilesBaseDir@/service/env"
+        service_env_profile="@userFilesBaseDir@/service/env-$DEPLOYMENT_ENV"
+        [ -d "$service_env" ] && [ -d "$service_env_profile" ] && cp -a "$service_env_profile/." "$service_env/"
+        
+        echoGreen "Creating symlink in /usr/bin/@packageName@ to /etc/init.d/@packageName@ for easy access"
+        ln -s /etc/init.d/@packageName@ /usr/bin/@packageName@
+        
+        echoGreen "Registering service: @packageName@ by creating symlink in $service_dir. Service will be started in 5 seconds"
+        ln -s @userFilesBaseDir@/service "$service_dir"
+        
+        wait_for_service_startup() {
+        
+            monitored_service="$1"
+        
+            # To let all devs access our services, the files under /etc/service/@packageName/supervise
+            # and /etc/service/@packageName/log/supervise have to be world-accessible.
+            # But this directory is created only after the service is started.
+            # So, we check the service status and make everything accessible once the service is up.
+            # TODO: Need to have proper group based permissions for this in the long term
+            supervise_up=false
+            retry_interval_seconds=5
+            maximum_passes=20
+            set +e
+            for i in $(seq 1 $maximum_passes);
+            do
+                echoYellow "> Waiting for $retry_interval_seconds seconds before checking whether supervise is up for: $monitored_service."
+                sleep "$retry_interval_seconds"
+                svok "$monitored_service"
+                last_exit_status=$?
+                check_result_output="> Supervise daemon status for $monitored_service: [$last_exit_status]  (0 means the daemon is up) Pass:($i/$maximum_passes)"
+                if [ "$last_exit_status" -eq 0 ]; then
+                    echoGreen "$check_result_output"
+                    supervise_up=true
+                    break
+                else
+                    echoRed "$check_result_output"
+                fi
+            done
+            set -e
+            
+            if [ "$supervise_up" = false ] ; then
+                echoRed "Looks like the supervise daemon is not up for $monitored_service."
+                echoRed "Aborting now, as otherwise, you will need sudo permission to control the service"
+                exit 1
+            fi
+            
+            # Now, go ahead and actually change permissions
+            echoYellow "Making $monitored_service and its contents world-accessible"
+            chmod 777 -R "$monitored_service"
+            echoGreen "Done making $monitored_service and its contents world-accessible"
+        }
+        
+        wait_for_service_startup "$service_dir"
+        wait_for_service_startup "$service_log_dir"
+        
+        echoGreen "Finished setup. Go go go!"
+        echoGreen ">> Run [@packageName@] or [/etc/init.d/@packageName@] for a list of available commands. Peace..."
+        echoNinja
+    
+        exit 0
+        

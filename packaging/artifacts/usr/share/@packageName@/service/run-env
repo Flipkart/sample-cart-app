@@ -1,0 +1,4 @@
+# Specify environment variables that should be available to the daemontools service run
+# script here.
+
+export JAVA_OPTS="-Dsun.misc.URLClassPath.disableJarChecking=true"

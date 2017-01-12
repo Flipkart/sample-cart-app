@@ -1,0 +1,53 @@
+//Taken from http://mapstruct.org/news/2013/07/08/using-mapstruct-with-gradle.html
+
+ext {
+    generatedMapperSourcesDir = "${buildDir}/generated-src/mapstruct/main"
+    mapstructVersion = "1.0.0.Final"
+    javaLanguageLevel = '1.8'
+}
+
+configurations {
+    mapstruct
+}
+
+dependencies {
+    compile("org.mapstruct:mapstruct-jdk8:$mapstructVersion")
+    mapstruct("org.mapstruct:mapstruct-processor:$mapstructVersion")
+}
+
+sourceSets.main {
+    ext.originalJavaSrcDirs = java.srcDirs
+    java.srcDir "${generatedMapperSourcesDir}"
+}
+
+task generateMainMapperClasses(type: JavaCompile) {
+    ext.aptDumpDir = file( "${buildDir}/tmp/apt/mapstruct" )
+    destinationDir = aptDumpDir
+
+    classpath = compileJava.classpath + configurations.mapstruct
+    source = sourceSets.main.originalJavaSrcDirs
+    ext.sourceDestDir = file ("$generatedMapperSourcesDir")
+
+    options.define(
+            compilerArgs: [
+                    "-nowarn",
+                    "-proc:only",
+                    "-encoding", "UTF-8",
+                    "-processor", "org.mapstruct.ap.MappingProcessor",
+                    "-s", sourceDestDir.absolutePath,
+                    "-source", rootProject.javaLanguageLevel,
+                    "-target", rootProject.javaLanguageLevel
+            ]
+    )
+
+    inputs.dir source
+    outputs.dir generatedMapperSourcesDir;
+    doFirst {
+        sourceDestDir.mkdirs()
+    }
+    doLast {
+        aptDumpDir.delete()
+    }
+}
+
+compileJava.dependsOn generateMainMapperClasses

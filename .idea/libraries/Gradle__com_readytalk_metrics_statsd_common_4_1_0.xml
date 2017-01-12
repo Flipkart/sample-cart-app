@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: com.readytalk:metrics-statsd-common:4.1.0">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.readytalk/metrics-statsd-common/4.1.0/8d0374c2f5420f3925cd6659efdccd80db829f07/metrics-statsd-common-4.1.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.readytalk/metrics-statsd-common/4.1.0/360517252a3fac18beec48a872ad9dcb35ba590d/metrics-statsd-common-4.1.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

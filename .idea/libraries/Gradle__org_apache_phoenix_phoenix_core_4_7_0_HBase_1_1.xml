@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.apache.phoenix:phoenix-core:4.7.0-HBase-1.1">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.phoenix/phoenix-core/4.7.0-HBase-1.1/bba4644e1b7163f00f0a5c611b13c30711670d78/phoenix-core-4.7.0-HBase-1.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.phoenix/phoenix-core/4.7.0-HBase-1.1/b5289fe99bd892cee472c2adf8eb1ae16e188cf0/phoenix-core-4.7.0-HBase-1.1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

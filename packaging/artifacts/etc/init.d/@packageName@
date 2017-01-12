@@ -1,0 +1,228 @@
+#!/bin/sh
+
+# NOTE: Do NOT depend on the exit codes of this script except the "monitor" command!
+
+# ANSI Colors
+# The escape characters are tuned for the sh shell.
+# Won't work on bash
+echoRed() { echo '\033[0;31m'"$1"'\033[0m'; }
+echoGreen() { echo '\033[0;32m'"$1"'\033[0m'; }                                                                                                                                                                           
+echoYellow() { echo '\033[0;33m'"$1"'\033[0m'; }
+
+service_dir="/etc/service/@packageName@"
+service_log_dir="/etc/service/@packageName@/log"
+
+debian_package_full_name="@generatedDebPackageName@"
+package_name="@packageName@"
+
+localhost_endpoint="http://localhost:@serverPort@"
+
+supervise_log_file="@superviseLogFile@"
+app_log_file="@applicationLogFile@"
+# http://www.unix.com/shell-programming-and-scripting/117958-get-parent-directory-file.html
+app_log_dir="${app_log_file%/*}"
+
+# Action functions
+start() {
+    svc -u "$service_log_dir"
+    svc -u "$service_dir"
+}
+
+force_stop() {
+    echoGreen "Issuing stop command to svc"
+    svc -d "$service_dir"
+    svc -d "$service_log_dir"
+}
+
+stop() {
+  # If the service is thrashing (starting, stopping, starting..), then curl just infinitely waits for the connection.
+  # So, the OOR function has a timeout. For stopping the service, we're going to just go ahead even if the timeout
+  # happens
+  set +e
+  oor
+  set -e
+  # TODO: Make sure no new requests are being processed before actually issuing the stop command
+  # Have to check how things are in the new DC with the deployment service. Will write custom
+  # APIs based on that if necessary.
+  # One way in the old DC is to see that the elb-healthcheck API is called at least once
+  # after the vip status has been changed, followed by waiting for a few seconds and seeing
+  # that no new requests have been processed.
+  # Till then, we'll just sleep for 15 seconds :)
+  stop_sleep_seconds_after_oor="${STOP_SLEEP_SECONDS:-15}"
+  echoYellow "Sleeping for $stop_sleep_seconds_after_oor seconds to let the VIP pick up that this host is OOR"
+  sleep "$stop_sleep_seconds_after_oor"
+  force_stop
+}
+
+restart() {
+    svc -t "$service_log_dir"
+    svc -t "$service_dir"
+}
+
+status() {
+    svstat "$service_dir"
+    svstat "$service_log_dir"
+}
+
+monitor() {
+    retry_interval_seconds="${MONITOR_PERIOD_SECONDS:-10}"
+    maximum_passes="${MONITOR_RETRIES:-20}"
+    for i in $(seq 1 "$maximum_passes");
+    do
+        curl --fail -i -XGET "$localhost_endpoint/elb-healthcheck/shallow"
+        last_exit_status=$?
+        check_result_output="> Curl shallow health check status: [$last_exit_status]  (0 means the service is up) Pass:($i/$maximum_passes)"
+        if [ "$last_exit_status" -eq 0 ]; then
+            echo ""
+            echoGreen "$check_result_output"
+            exit 0
+        else
+            echoRed "$check_result_output"
+            if [ "$i" -eq "$maximum_passes" ]; then
+                break
+            fi
+            echoYellow "> Waiting for $retry_interval_seconds seconds before checking whether service is up"
+            sleep "$retry_interval_seconds"
+        fi
+    done
+    echoRed "Service not up after $maximum_passes tries. Check the logs for errors."
+    exit 1
+}
+
+oor() {
+    echoYellow "Taking service out of rotation..."
+    curl -iv --connect-timeout 1 --max-time 1 -XPUT "$localhost_endpoint/elb-healthcheck" -H "Content-Type: application/json" -d "{\"vip_status\": \"OUT_OF_ROTATION\"}"
+    echo ""
+}
+
+bir() {
+    echoGreen "Putting service back in rotation..."
+    curl -iv -XPUT "$localhost_endpoint/elb-healthcheck" -H "Content-Type: application/json" -d "{\"vip_status\": \"IN_ROTATION\"}"
+    echo ""
+    echoGreen "[NOTE: The VIP may take a few seconds to detect that this is BIR again]"
+}
+
+elb_healthcheck() {
+    curl -i -XGET "$localhost_endpoint/elb-healthcheck"
+    echo ""
+}
+
+shallow_healthcheck() {
+    curl -i -XGET "$localhost_endpoint/elb-healthcheck/shallow"
+    echo ""
+}
+
+deep_healthcheck() {
+    curl -i -XGET "$localhost_endpoint/elb-healthcheck/deep"
+    echo ""
+}
+
+tail_log() {
+    less +F "$app_log_file"
+}
+
+log_dir() {
+    echo "$app_log_dir"
+}
+
+ls_logs() {
+    ls "$app_log_dir"
+}
+
+tail_supervise_log() {
+    less +F "$supervise_log_file"
+}
+
+deb_name() {
+    echoGreen "Package name during script generation: $debian_package_full_name"
+    echoGreen "------- Installed Package -------"
+    dpkg -l "$package_name"
+}
+
+installed_files() {
+    dpkg -L "$package_name"
+}
+
+action="$1"
+if [ "$#" -gt 0 ]; then
+    shift
+fi
+
+# Call the appropriate action function
+case "$action" in
+start)
+    start "$@"; exit $?;;
+stop)
+    stop "$@"; exit $?;;
+force_stop)
+    force_stop "$@"; exit $?;;
+restart)
+    restart "$@"; exit $?;;
+status)
+    status "$@"; exit $?;;
+monitor)
+    monitor "$@"; exit $?;;
+bir)
+    bir "$@"; exit $?;;
+oor)
+    oor "$@"; exit $?;;
+elb_healthcheck)
+    elb_healthcheck "$@"; exit $?;;
+shallow_healthcheck)
+    shallow_healthcheck "$@"; exit $?;;
+deep_healthcheck)
+    deep_healthcheck "$@"; exit $?;;
+tail_log)
+    tail_log "$@"; exit $?;;
+tail_supervise_log)
+    tail_supervise_log "$@"; exit $?;;
+ls_logs)
+    ls_logs "$@"; exit $?;;
+log_dir)
+    log_dir "$@"; exit $?;;
+deb_name)
+    deb_name "$@"; exit $?;;
+installed_files)
+    installed_files "$@"; exit $?;;
+*)
+    echoRed "Unrecognized command: $action"
+    echo "Usage: [$0 command]. command is one of the following: "
+    echo "> Service Commands"
+    echo "   *) start: Start the service and put it back in rotation"
+    echo "   *) stop: Take the service out of rotation, wait for outstanding requests to be processed and bring it down. Use STOP_SLEEP_SECONDS env variable to customize sleeping time after taking the host OOR"
+    echo "   *) force_stop: Just bring down the service without taking it out of rotation and without waiting for outstanding requests to be processed"
+    echo "   *) restart: stop and start the service"
+    echo "   *) status: Status of the service. Also prints the process ID if the service is up"
+    echo "   *) monitor: Check if the service is responding to a shallow health check by repeatedly pinging it." 
+    echo "               Exits with 0 the first time the shallow health check succeeds"
+    echo "               Exits with 1 if the service does not respond or the shallow check never succeeds."
+    echo "               Tries every MONITOR_PERIOD_SECONDS for MONITOR_RETRIES times (see below)"
+    echo "               Use this command for checking if the service is up after a deployment."
+    echo "               Default period between retries: 10 seconds."
+    echo "               Default maximum number of retries: 20." 
+    echo "               To customize this, set the environment variables MONITOR_PERIOD_SECONDS and MONITOR_RETRIES"
+    echo "               Example:>> MONITOR_PERIOD_SECONDS=5 MONITOR_RETRIES=10 @packageName@ monitor"
+    echo ""
+    echo "> Service VIP Control Commands"
+    echo "   *) bir: Put the service back in rotation"
+    echo "   *) oor: Take the service out of rotation"
+    echo ""
+    echo "> Health Check Commands"
+    echo "   *) elb_healthcheck: Prints the current health status returned to the VIP"
+    echo "   *) shallow_healthcheck: Performs a shallow healthcheck including the VIP status"
+    echo "   *) deep_healthcheck: Performs a deep healthcheck without the VIP status"
+    echo ""
+    echo "> Log Commands"
+    echo "   *) tail_log: tails the application log using less +F"
+    echo "   *) tail_supervise_log: tails the supervise log for this service using less +F"
+    echo "   *) ls_logs: lists the files in the application log directory"
+    echo "   *) log_dir: prints the application log directory"
+    echo ""
+    echo "> Package Commands"
+    echo "   *) deb_name: Prints the debian package name that installed this service"
+    echo "   *) installed_files: Prints all the files installed by this package"
+    echo ""
+    exit 1;
+esac
+
+exit 0

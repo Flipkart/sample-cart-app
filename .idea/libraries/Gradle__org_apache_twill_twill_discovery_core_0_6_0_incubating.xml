@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.apache.twill:twill-discovery-core:0.6.0-incubating">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.twill/twill-discovery-core/0.6.0-incubating/b30e4df2f98d858bba1e2914e79d3b785deb2022/twill-discovery-core-0.6.0-incubating.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.twill/twill-discovery-core/0.6.0-incubating/666302ca245dcbdfde8f3dd56b2205abf96a4b0e/twill-discovery-core-0.6.0-incubating-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

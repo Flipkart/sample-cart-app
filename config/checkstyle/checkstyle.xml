@@ -1,0 +1,120 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE module PUBLIC "-//Puppy Crawl//DTD Check Configuration 1.3//EN" "http://www.puppycrawl.com/dtds/configuration_1_3.dtd">
+
+<!-- This configuration file was written by the eclipse-cs plugin configuration editor -->
+<!-- Checkstyle-Configuration: WMS Description: none -->
+<module name="Checker">
+   <property name="severity" value="error" />
+   <module name="TreeWalker">
+      <module name="ConstantName" />
+      <module name="LocalFinalVariableName" />
+      <module name="LocalVariableName" />
+      <module name="MemberName" />
+      <module name="MethodName" />
+      <module name="PackageName" />
+      <module name="ParameterName" />
+      <module name="StaticVariableName" />
+      <module name="TypeName" />
+      <module name="IllegalImport" />
+      <module name="UnusedImports" />
+      <module name="OuterTypeNumber" />
+
+      <module name="HiddenField">
+         <property name="id" value="checkstyle:hiddenfield" />
+         <property name="tokens" value="VARIABLE_DEF" />
+      </module>
+      <module name="DesignForExtension">
+         <property name="id" value="checkstyle:designforextension" />
+         <property name="severity" value="ignore" />
+         <metadata name="net.sf.eclipsecs.core.lastEnabledSeverity"
+            value="inherit" />
+      </module>
+      <module name="CovariantEquals">
+         <property name="id" value="checkstyle:covariantequals" />
+      </module>
+
+      <module name="LineLength">
+         <property name="ignorePattern" value="^ *\* *[^ ]+$" />
+         <property name="max" value="120" />
+      </module>
+      <module name="MethodLength">
+         <property name="max" value="40" />
+         <property name="countEmpty" value="false" />
+         <property name="tokens" value="METHOD_DEF" />
+      </module>
+      <module name="ParameterNumber">
+         <property name="max" value="6" />
+         <property name="tokens" value="METHOD_DEF" />
+      </module>
+      <module name="MethodCount">
+         <property name="maxProtected" value="15" />
+         <property name="maxPublic" value="30" />
+      </module>
+      <module name="AnonInnerLength">
+         <property name="max" value="60" />
+      </module>
+      <module name="EmptyForIteratorPad" />
+      <module name="GenericWhitespace" />
+      <module name="MethodParamPad" />
+      <module name="NoWhitespaceBefore" />
+      <module name="OperatorWrap" />
+      <module name="ParenPad" />
+      <module name="TypecastParenPad" />
+      <module name="WhitespaceAfter" />
+      <module name="WhitespaceAround" />
+      <module name="ModifierOrder" />
+      <module name="RedundantModifier" />
+      <module name="AvoidNestedBlocks" />
+      <module name="EmptyBlock" />
+      <module name="LeftCurly" />
+      <module name="NeedBraces" />
+      <module name="RightCurly" />
+      <module name="AvoidInlineConditionals">
+         <property name="severity" value="ignore" />
+         <metadata name="net.sf.eclipsecs.core.lastEnabledSeverity"
+            value="inherit" />
+      </module>
+      <module name="EmptyStatement" />
+      <module name="EqualsHashCode" />
+      <module name="IllegalInstantiation" />
+      <module name="InnerAssignment" />
+      <module name="MagicNumber" />
+      <module name="MissingSwitchDefault" />
+      <module name="SimplifyBooleanExpression" />
+      <module name="SimplifyBooleanReturn" />
+      <module name="FinalClass" />
+      <module name="InterfaceIsType" />
+      <module name="VisibilityModifier" />
+      <module name="ArrayTypeStyle" />
+      <module name="TodoComment">
+         <property name="severity" value="ignore" />
+         <metadata name="net.sf.eclipsecs.core.lastEnabledSeverity"
+            value="inherit" />
+      </module>
+      <module name="UpperEll" />
+
+      <module name="SuppressWarningsHolder" />
+      <module name="NoWhitespaceAfter">
+         <property name="tokens" value="BNOT,DEC,DOT,INC,LNOT,UNARY_MINUS,UNARY_PLUS" />
+      </module>
+      <module name="LineLength">
+         <property name="max" value="120" />
+         <property name="tabWidth" value="3" />
+      </module>
+   </module>
+   <module name="SuppressionFilter">
+      <property name="file" value="${sameDir}/suppressions.xml" />
+   </module>
+   <module name="NewlineAtEndOfFile" />
+   <module name="Translation" />
+   <module name="FileLength">
+      <property name="max" value="1500" />
+   </module>
+   <module name="FileTabCharacter" />
+   <module name="SuppressWarningsFilter" />
+   <module name="StrictDuplicateCode">
+      <property name="id" value="checkstyle:strictduplicatecode" />
+      <property name="severity" value="ignore" />
+      <metadata name="net.sf.eclipsecs.core.lastEnabledSeverity" value="inherit" />
+   </module>
+</module>

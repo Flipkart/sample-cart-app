@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: com.github.kristofa:brave-core:3.2.0">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.kristofa/brave-core/3.2.0/6d8abc78d76cdb79e7c83438bc01756df878a5ea/brave-core-3.2.0.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.github.kristofa/brave-core/3.2.0/a737f1c4ce98f86d297b486d418e762ec814143b/brave-core-3.2.0-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

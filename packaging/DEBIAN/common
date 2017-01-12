@@ -1,0 +1,16 @@
+#!/bin/sh
+
+# ANSI Colors
+# The escape characters are tuned for the sh shell.
+# Won't work on bash
+echoToLog() { echo "$(date '+%Y-%m-%d %H:%M:%S') $1" >> /var/log/dpkg.log; }
+echoRed() { echo '\033[0;31m'"$1"'\033[0m'; echoToLog "$1"; }
+echoGreen() { echo '\033[0;32m'"$1"'\033[0m'; echoToLog "$1"; }                                                                                                                                                                           
+echoYellow() { echo '\033[0;33m'"$1"'\033[0m'; echoToLog "$1"; }
+echoNormal() { echo "$1"; echoToLog "$1"; }
+
+echoNinja() {
+    echoGreen "        \o/  "
+    echoGreen "       /\|   "
+    echoGreen "          \  "
+}

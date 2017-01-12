@@ -1,0 +1,19 @@
+#!/bin/sh -e
+
+daemontools_service_run_env="@userFilesBaseDir@/service/run-env"
+daemontools_service_run_env_profile="@userFilesBaseDir@/service/run-env-@deploymentEnv@"
+
+[ -f "$daemontools_service_run_env" ] && . "$daemontools_service_run_env"
+[ -f "$daemontools_service_run_env_profile" ] && . "$daemontools_service_run_env_profile"
+
+# This assumes that the postinst script has already copied the files from the service/env/@deploymentEnv@
+# into service/env to act as environment-specific overrides.
+# We're not doing the above override within this script to avoid potential permission issues as
+# execution user's script may run with lower privileges than the debian package's postinst script.
+# http://cr.yp.to/daemontools/faq/create.html
+# Redirect stderr to stdout for logging into the same file
+exec 2>&1
+exec \
+    envdir @userFilesBaseDir@/service/env \
+    setuidgid @userName@ \
+    java -Dspring.profiles.active=@deploymentEnv@ "$JAVA_OPTS" -jar @destinationJarPath@

@@ -1,0 +1,80 @@
+apply plugin: 'groovy'
+apply plugin: 'com.terrafolio.jenkins'
+import org.apache.tools.ant.DirectoryScanner
+
+task updateJenkinsParams(dependsOn: loadParameters) << {
+
+    def JENKINS_URL
+    def JENKINS_JOB_NAME
+    def GIT_URL
+    def GIT_BRANCH
+    def SCRIPT_FILE_PATH
+    def USER_NAME = propertyOr("username",null);
+    def PASSWORD = propertyOr("password",null);
+
+    loadParameters.parametersData.tokenTypes['jenkins'].each {
+        if (it.tokenName.equals("jenkinsUrl")) {
+            JENKINS_URL = it.value
+        }
+        if (it.tokenName.equals("jenkinsJobName")) {
+            JENKINS_JOB_NAME = it.value
+        }
+        if (it.tokenName.equals("pipelineScriptGitUrl")) {
+            GIT_URL = it.value
+        }
+        if (it.tokenName.equals("gitBranchName")) {
+            GIT_BRANCH = it.value
+        }
+        if (it.tokenName.equals("pipelineScriptFileName")) {
+            SCRIPT_FILE_PATH = it.value
+        }
+
+    }
+    def jenkinsTokens = extractTokenMap(loadParameters.parametersData.tokenTypes['jenkins'])
+    println "Jenkins tokens: ${jenkinsTokens}"
+    if (!(JENKINS_JOB_NAME.length()<=1)) {
+        DirectoryScanner.removeDefaultExclude("**/.gitignore")
+        def excludedPaths = loadParametersSchema.schemaData.excludedPaths
+        def tempDestinationPath = "resources/temp"
+
+
+        copy{
+            from("resources/jenkins"){
+                include "*.xml"
+            }
+            into(tempDestinationPath)
+
+
+            filter{
+                String line -> replaceTextPropertiesWithoutTokens(line, jenkinsTokens)
+            }
+        }
+        jenkins {
+
+            servers {
+                testing {
+                    url JENKINS_URL
+                    secure true
+                    username USER_NAME
+                    password PASSWORD
+                }
+
+            }
+
+            defaultServer servers.testing
+
+            jobs {
+                build {
+                    type 'Workflow'
+                    definition {
+                        name JENKINS_JOB_NAME
+                        xml file('resources/temp/jenkins-job-config.xml')
+                    }
+                }
+            }
+        }
+    } else {
+        println "Jenkins Job Not to be created"
+    }
+}
+updateJenkinsItems {}.dependsOn updateJenkinsParams

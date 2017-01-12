@@ -1,0 +1,66 @@
+
+dependencies {
+    testCompile("org.springframework.boot:spring-boot-starter-test") {
+        exclude module: "junit"
+        exclude module: "mockito-core"
+        exclude module: "hamcrest-core"
+        exclude module: "hamcrest-library"
+    }
+    testCompile("junit:junit:4.11") {
+        exclude module: "hamcrest-core"
+    }
+    testCompile("org.hamcrest:hamcrest-all:1.3")
+    testCompile("org.mockito:mockito-all:1.8.4")
+    testCompile("org.unitils:unitils-core:3.4.2")
+}
+
+
+// http://www.petrikainulainen.net/programming/gradle/getting-started-with-gradle-integration-testing/
+// and the comments section
+
+// integration test source-set
+sourceSets {
+    // Note that just declaring this source set creates two configurations.
+    integrationTest {
+        java {
+            compileClasspath += main.output + test.output
+            runtimeClasspath += main.output + test.output
+            srcDir file('src/integration-test/java')
+        }
+
+        resources.srcDir file('src/integration-test/resources')
+    }
+}
+
+configurations {
+    integrationTestCompile.extendsFrom testCompile
+    integrationTestRuntime.extendsFrom testRuntime
+}
+
+task integrationTest(type: Test) {
+    description = "Run integration tests (located in src/integration-test/...)."
+    group = 'verification'
+    testClassesDir = project.sourceSets.integrationTest.output.classesDir
+    classpath = project.sourceSets.integrationTest.runtimeClasspath
+    
+    outputs.upToDateWhen { false }
+}
+
+// To generate separate html reports for unit and integration tests
+tasks.withType(Test) {
+    systemProperty 'spring.profiles.active', System.getProperty('spring.profiles.active', 'dev')
+    reports.html.destination = file("${reporting.baseDir}/${name}")
+}
+
+test {
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+    }
+}
+
+integrationTest {
+    testLogging {
+        events 'passed', 'skipped', 'failed'
+    }
+}
+

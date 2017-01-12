@@ -1,0 +1,11 @@
+
+#http://docs.spring.io/spring-boot/docs/current/reference/html/production-ready-endpoints.html
+endpoints:
+  beans:
+    enabled: false
+
+statsd:
+  prefix: production
+  
+periodicHealthCheck:
+  fixedDelayMs: 10000

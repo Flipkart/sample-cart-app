@@ -1,0 +1,6 @@
+statsd:
+  prefix: alpha
+  
+periodicHealthCheck:
+  fixedDelayMs: 10000 
+

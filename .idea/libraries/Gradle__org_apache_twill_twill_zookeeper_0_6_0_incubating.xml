@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.apache.twill:twill-zookeeper:0.6.0-incubating">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.twill/twill-zookeeper/0.6.0-incubating/58f37b2dc9eeaadcafd63236cce8d61f500ab29c/twill-zookeeper-0.6.0-incubating.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.apache.twill/twill-zookeeper/0.6.0-incubating/1265cd4dd2a397bc63df03116577832d6aa611aa/twill-zookeeper-0.6.0-incubating-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

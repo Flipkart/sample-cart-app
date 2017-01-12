@@ -1,0 +1,63 @@
+#!/bin/sh -e
+
+wait_for_supervise_down() {
+
+    monitored_service="$1"
+
+    supervise_up=true
+    retry_interval_seconds=10
+    maximum_passes=10
+    set +e
+    for i in $(seq 1 "$maximum_passes");
+    do
+        svok "$monitored_service"
+        last_exit_status=$?
+        check_result_output="> Supervise daemon status for $monitored_service: [$last_exit_status]  (Non-0 value means the daemon is down) Pass:($i/$maximum_passes)"
+        if [ "$last_exit_status" -ne 0 ]; then
+            echoGreen "$check_result_output"
+            supervise_up=false
+            break
+        else
+            echoRed "$check_result_output"
+            if [ "$i" -eq "$maximum_passes" ]; then
+                break
+            fi
+            echoYellow "> Waiting for $retry_interval_seconds seconds before checking whether supervise is still up for: $monitored_service."
+            sleep "$retry_interval_seconds"
+        fi
+    done
+    set -e
+    
+    if [ "$supervise_up" = true ] ; then
+        echoRed "Could not bring down supervise for $monitored_service. Proceeding with the uninstallation anyway."
+        echoRed "You might have to manually delete some files in $monitored_service and kill processes."
+    fi
+}
+
+# Calling stop here to do any other cleanup actions that might be in the stop script
+/etc/init.d/@packageName@ stop
+
+echoYellow "Removing symlink in /usr/bin"
+rm -f /usr/bin/@packageName@
+
+# We'll operate on the actual directory now instead of the registered symlink
+service_dir="/usr/share/@packageName@/service"
+
+# Tell the supervise daemon to exit once the service is down
+# The "d" is necessary here because the old process may not have shut down
+# or svscan may have started a new supervise daemon before we
+# removed the /etc/service/@packageName@ symlink
+if [ -d "/etc/service/@packageName@" ]
+then
+    echoYellow "Bringing down the service supervise daemon..."
+    cd /etc/service/@packageName@
+    rm /etc/service/@packageName@
+    svc -dx . log
+    wait_for_supervise_down "."
+    wait_for_supervise_down "log"
+fi
+
+echoYellow "Removing service directories..."
+rm -rf "$service_dir"
+
+exit 0

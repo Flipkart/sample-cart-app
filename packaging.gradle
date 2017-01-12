@@ -1,0 +1,223 @@
+apply plugin: 'nebula.deb'
+apply plugin: 'org.hidetake.ssh'
+
+//We don't need to package our application into zip and tar files :P
+distZip {
+    enabled = false
+}
+
+distTar {
+    enabled = false
+}
+
+ext {
+
+    debianConfig = [
+    
+        // WARNING: Do not create a token with the name @deploymentEnv@
+        // as this is replaced during the time of package deployment
+        // in packaging/artifacts/usr/@packageName@/service/run
+        tokens: [
+            userFilesBaseDir: "/usr/share/${->debianConfig.tokens.packageName}",
+            packageName: propertyOr('debPackageName', "fk-${project.name}"),
+            metricsPrefix: propertyOr("debMetricsPrefix", hyphenToDot(project.name)),
+            processName: propertyOr("debProcessName", hyphenToDot(project.name)),
+            serverPort: propertyOr("serverPort", 8080),
+            
+            // The bootRepackage tasks packages the actual JAR into a "fat" JAR that contains
+            // all the dependencies. It uses the same file name as the original JAR, though. So,
+            // for our purposes, we can still use names from the "jar" task itself
+            destinationJarPath: "${->debianConfig.tokens.userFilesBaseDir}/${->file(jar.outputs.files.singleFile).name}",
+            generatedDebPackageName: "${->assembleDebian.archiveName}",
+
+            userName: "fk-supply-chain",
+            userId: 4525,
+            groupName: "fk-supply-chain",
+            groupId: 4500,
+
+            logDirectory: "/var/log/flipkart/supply-chain/${->debianConfig.tokens.packageName}",
+            superviseLogDirectory: "${->debianConfig.tokens.logDirectory}/supervise-logs",
+
+            applicationLogFile: "${->debianConfig.tokens.logDirectory}/${->debianConfig.tokens.packageName}.log",
+            superviseLogFile: "${->debianConfig.tokens.superviseLogDirectory}/current",
+        ],
+        
+        // Specify binary files to be excluded from content filtering during the debian generation process
+        // Specify the relative unfiltered path with respect to packaging/artifacts
+        // Ex: /etc/extras/file.jpg
+        // (or) .jpg (To exclude all jpg files)
+        // (or) /@packageName@/images/ (To exclude all files in the @packageName@/images directory)
+        // Wildcard expressions are not currently supported
+        contentFilterExcludedFiles: [
+            
+        ]
+    ]
+}
+
+
+// See http://gradle.1045684.n5.nabble.com/Setting-task-inputs-and-outputs-always-gives-UP-to-Date-td5597656.html
+// for how to have code in configuration closures
+
+task configureAssembleDebian << {
+
+    // Debian package name format:
+    // packageName_version-release_arch.deb
+
+    assembleDebian.packageName = debianConfig.tokens.packageName
+    assembleDebian.version = propertyOr('debVersion', "${project.version}-${gitHeadRevision()}")
+    assembleDebian.release = propertyOrError('debBuildNumber')
+    assembleDebian.maintainer = 'my-team-email@flipkart.com'
+    assembleDebian.uploaders = 'my-team-email@flipkart.com'
+    assembleDebian.packageDescription = 'Sample service package which uses Spring Boot + Jetty + Gradle'
+    assembleDebian.priority = 'standard'
+    
+    assembleDebian.createDirectoryEntry = true
+    assembleDebian.includeEmptyDirs = false
+    
+    assembleDebian.user = debianConfig.tokens.userName
+    assembleDebian.uid = debianConfig.tokens.userId
+    assembleDebian.gid = debianConfig.tokens.groupId
+    
+    
+    assembleDebian.preDepends('java-common')
+    assembleDebian.preDepends('oracle-j2sdk1.8')
+    assembleDebian.preDepends('stream-relay')
+    assembleDebian.preDepends('cosmos-statsd')
+    assembleDebian.preDepends('fk-config-service-confd')
+    
+
+    // Ant's ReplaceTokens task expects java.lang.String. However, by using expression strings,
+    // (example) "fk-${project-name}", this becomes a GString. So, the filter line fails.
+    // We have to convert the GString to a java.lang.String before we pass it to Ant's ReplaceTokens.
+    // This also forces the evaluation of lazy GStrings
+    def evaluatedProperties = debianConfig.tokens.collectEntries { k, v -> [(k): v.toString()] }
+    assembleDebian.from('packaging/artifacts') {
+
+        fileMode 0777
+        
+        into('/')
+        
+        // The below code nearly destroyed my faith in Gradle! There is no "clean" way to rename directories
+        // while copying. So, we use eachFile to change the path while copying. However, the original directory names
+        // with the unsubstituted path are copied as well during this process with the empty directory only
+        // being created. To avoid these empty directories from appearing in the .deb file, we set 
+        // includeEmptyDirs=false.
+        // File/directory name tokens are expected to be of the form: @tokenName@
+        eachFile { FileCopyDetails fileDetails ->
+            String oldPath = fileDetails.path
+            fileDetails.path = replaceTextProperties(fileDetails.path, evaluatedProperties)
+            println "Artifact[${oldPath}] -> Deb[${fileDetails.path}]"
+            
+            if(debianConfig.contentFilterExcludedFiles.any { oldPath.contains(it) }) {
+                
+                println "Excluding [${oldPath}] from content filtering"
+                
+            } else {
+            
+				// Here, we replace all tokens in the copied files with the corresponding values from
+				// evaluatedProperties which have the tokens as keys.
+				// Using Gradle's expand causes problems wherever we have $ in the file content.
+				// And we will have a lot of $ in our shell scripts packaged in the debian file :)
+				// So, we're using Ant's token detection mechanism instead, where tokens are 
+				// expected to be of the form: @tokenName@
+                fileDetails.filter(org.apache.tools.ant.filters.ReplaceTokens, tokens: evaluatedProperties)
+            }
+        }
+    }
+    
+    assembleDebian.from(jar.outputs.files) {
+    
+        fileMode 0777
+    
+        into(evaluatedProperties.userFilesBaseDir)
+        
+        eachFile { FileCopyDetails fileDetails ->
+            println "Artifact[${fileDetails.sourcePath}] -> Deb[${fileDetails.path}]" 
+        }
+    }
+    
+    assembleDebian.installUtils replaceFileProperties(file('packaging/DEBIAN/common'), evaluatedProperties)
+    assembleDebian.preInstall replaceFileProperties(file('packaging/DEBIAN/preinst'), evaluatedProperties)
+    assembleDebian.postInstall replaceFileProperties(file('packaging/DEBIAN/postinst'), evaluatedProperties)
+    assembleDebian.preUninstall replaceFileProperties(file('packaging/DEBIAN/prerm'), evaluatedProperties)
+    assembleDebian.postUninstall replaceFileProperties(file('packaging/DEBIAN/postrm'), evaluatedProperties)
+    
+    def buildUrl = propertyOr('buildUrl', false)
+    if(buildUrl) {
+        assembleDebian.customField 'Build-Url', buildUrl
+    }
+}
+
+
+// NOTE: This task depends on bootRepackage because we want to put the
+// the repackaged fat jar into the debian, not the initial compiled jar from
+// the "jar" task.
+task assembleDebian(type: Deb, dependsOn: [bootRepackage, configureAssembleDebian]) 
+
+// Reference: http://mrhaki.blogspot.in/2012/06/gradle-goodness-create-checksums-for.html
+// Don't want to use { archives assembleDebian } because of the circular dependency
+// with bootRepackage. bootRepackage depends on tasks of type "Archive" in order to 
+// repackage the generated archives as a fat JAR.
+assembleDebian.doLast { task ->
+    
+    ant.checksum(file: assembleDebian.archivePath)
+    
+    def generatedChecksumFilePath = "${assembleDebian.archivePath}.MD5"
+    def newChecksumFilePath = "${assembleDebian.archivePath}.md5"
+    def renameSucceeded = new File(generatedChecksumFilePath).renameTo(newChecksumFilePath)
+    if(!renameSucceeded) { 
+        throw new GradleException("Renaming generated checksum file: ${generatedChecksumFilePath} to " +
+            "${newChecksumFilePath} failed"
+        )
+    }
+    
+    println "Generated debian package: ${assembleDebian.archivePath}"
+    println "Generated checksum file: ${newChecksumFilePath}"
+    
+    def debianPropertiesFilePath = "${project.buildDir}/debian.properties"
+    new File(debianPropertiesFilePath).withWriter { out ->
+        out.println "DEB_PACKAGE_NAME=${assembleDebian.packageName}"
+        out.println "DEB_PACKAGE_VERSION=${assembleDebian.version}-${assembleDebian.release}"
+    }
+    
+    ext {
+        debianPropertiesFile = debianPropertiesFilePath
+        archiveChecksumPath = newChecksumFilePath
+    }
+}
+
+task buildDebian(dependsOn: [assembleDebian]) 
+
+task uploadDebian(dependsOn: buildDebian) << {
+
+    def targetReposString = propertyOrError("targetRepos")
+    def targetRepos = Arrays.<String>asList(targetReposString.split(","))
+    
+    def remoteTargetDirectory = '/var/data/ftp-all/apt'
+    def rsaPath = '/var/lib/jenkins/.ssh/id_rsa'
+    
+    def repoNo = 0
+    targetRepos.each { repo ->
+        ++repoNo
+        def repoNoStr = "${repoNo}"
+        remotes.create(repoNoStr) {
+            host = repo
+            user = 'jenkins'
+            identity = file(rsaPath)
+        } 
+        
+        ssh.run {
+            session(remotes[repoNoStr]) {
+                println "> Starting upload for host: ${remotes[repoNoStr].host}"
+                put from:assembleDebian.archivePath, into: remoteTargetDirectory
+                put from:assembleDebian.archiveChecksumPath, into: remoteTargetDirectory
+                println "> Completed upload for host: ${remotes[repoNoStr].host}"
+            }
+        }
+    }
+}
+
+uploadDebian.doLast { task ->
+
+    println "Upload complete"
+}

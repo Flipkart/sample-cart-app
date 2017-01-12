@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: com.ekart.common:spring-boot-swagger:0.0.1">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.ekart.common/spring-boot-swagger/0.0.1/191f0148fe8c2967196e474a893446d28da12bf1/spring-boot-swagger-0.0.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.ekart.common/spring-boot-swagger/0.0.1/1ac562f6ccb6ed40abc1ca19f495bef39251fe5d/spring-boot-swagger-0.0.1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

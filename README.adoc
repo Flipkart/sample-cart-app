@@ -1,0 +1,154 @@
+:toc: macro
+:toc-placement: preamble
+
+= Spring Boot + Jetty Starter Template
+
+toc::[]
+
+== Call for Contributions
+There are a number of improvements possible. The ideal goal is to have this akin to a spring boot starter kit with this particular project just being a scaffolding to pull in those libraries and being very lightweight. If you are interested in doing that, it would be great. Please raise a pull request!
+
+If you find any other bugs, raise a pull request!
+
+== Take a Test Drive
+With ekart-starter-kit as the root folder, run
+[source,bash]
+----
+./gradlew generateCode -PtemplateProject=spring-boot-jetty -PsourceDir=/tmp/yourDir -PparametersFile=examples/code/spring-boot-jetty.yml
+----
+
+== Convention
+All your controllers/service-related code is present under the apis package. Your actual business logic is present under the service package.
+Ex: com.ekart.wms.rules.apis.controllers, com.ekart.wms.rules.service.drools
+
+== Gradle Tasks
+Run "*gradle tasks*" to get a complete list of available tasks.
+
+* *build:* To run unit tests, findbugs and checkstyle
+* *bootRun:* Start your service locally. You can use -D to pass environment variables to your application. The *dev* profile is used by default
+* *test:* Run unit tests. You can run "*gradle test -PmaxParallelForks=2*" to parallelize and run on 2 cores
+* *integrationTest:* Run integration tests. You have to use "*gradle bootRun*" to start your service first locally, and then run "*gradle integrationTest*" to test your service in another shell.  Use "*-Dspring.profiles.active=alpha*" to hit your alpha endpoint from a Jenkins job. You can also use "*gradle integrationTest -PmaxParallelForks=2*" to run on 2 cores in parallel and finish faster
+* *cobertura:* To generate coverage metrics
+* *buildDebian:* Builds a debian package from your code containing a fat jar and scripts like init, preinst, postinst, prerm, postrm, etc. It also writes DEB_PACKAGE_NAME and DEB_PACKAGE_VERSION to build/debian.properties. This is useful for integrating with Jenkins. The supported options for this task are:
+** debBuildNumber - Mandatory. Used as the release parameter of the debian package. If you are building through Jenkins, pass the $BUILD_NUMBER build parameter
+** debVersion - Optional. The first 6 characters of your latest Git commit are used by default
+** debPackageName - Optional. Your package name. Is fk-${project.name} by default
+* *uploadDebian:* - Upload the debian package to an apt repo. The supported options are:
+** targetRepos - Mandatory. Commo-separated list of repository names. No spaces. Ex: wzy-build1.nm.flipkart.com,stage-wzy1.stage.nm.flipkart.com 
+** netrcFile - Mandatory. The path of the netrc file from which the FTP credentials of the target repos have to be read from
+
+== Sample Jenkins Pipeline
+link:https://ekart-jenkins-master.nm.flipkart.com:8080/job/facp/job/facp-balance-bucket/view/facp-balance-bucket-pipeline/[]
+  
+== Tools Integration
+You get integration with findbugs, checkstyle and cobertura out of the box. Run "*gradle tasks*" to know about the actual commands.
+  
+== Statsd Integration
+By default, the configuration assumes statsd is running on the local host on port 8125. Also, controller metrics are published for the existing controllers if you annotate them with metrics-spring annotations. You can also add metrics-spring annotations to your other classes to get statsd metrics out of the box. Spring AOP is used by metrics-spring to generate metrics for annotated methods.
+
+== Cosmos Integration
+Prefix files are present in link:packaging/artifacts/etc/default/cosmos-role[] and link:packaging/artifacts/etc/default/cosmos-service[]. You can customize the values in link:packaging.gradle[] to replace the tokens at the time of Debian package creation.
+
+== Confd Integration
+A dependency is declared on fk-config-service-confd in link:packaging.gradle[]. The link:packaging/DEBIAN/postinst[postinst] script takes care of replacing the @deploymentEnv@ token in your toml files with the DEPLOYMENT_ENV environment variable specified at the time of package installation, and initializing/restarting confd. This is triggered only if there are files present in /etc/confd/conf.d in the machine.
+
+== Logsvc Integration
+A starter rsyslog file is given. Readmode=1 is used and the corresponding support additional blank lines between log files is supported as well. You can find it under link:packaging/artifacts/etc/rsyslog.d[]
+
+== Logback Integration
+You get coloured log output on your local box, and production logs are formatted keeping logsvc's readmode=1 in mind with an extra line break between lines. The logging configuration is present in link:src/main/resources/logback-spring.xml[]. You can configure the logging level in your link:src/main/resources/application.yml[] file.
+
+== Swagger Support
+You get Swagger support by default. Visit http://localhost:8080/swagger-ui.html to see the Swagger UI for your APIs. Customize the messages for your service in SwaggerConfig.java. You'll have to write Swagger annotations for any new controllers and models you write, though.
+
+== JMX Integration
+Spring Boot-related and Jetty JMX metrics are published to JMX. You can use the JMX endpoint to debug your application
+
+== Healthcheck APIs
+The current implementation of the Healthcheck controller uses Jetty statistics to build the necessary data for ELB health checks. Also, shallow and deep healthcheck frameworks are set up in place. The deep healthcheck runs every few seconds (controlled by periodicHealthCheck.fixedDelayMs in link:src/main/resources/application.yml[]) and updates a health check results cache. The shallow health check returns results from this cache and is very fast. Add */elb-healthcheck* as the health check endpoint when you register your application against a VIP.
+
+Also, Dropwizard healthchecks are used. You can add more health checks based on the components you need to monitor.
+
+Note: See link:src/main/java/com/ekart/springbootjetty/sample/apis/metrics/ElbStatisticsCollector.java[] for details how ELB health check statistics are calculated
+
+== Zipkin Integration
+It used spring-cloud-sleuth-zipkin to generate trace and span IDs for all API requests, scheduled jobs, etc. The trace and span IDs are dumped in the log files. The Zipkin collector endpoints can be configured in application.yml. On a local box, they are dumped to the logs itself.
+
+Traces are always generated as of now. In a future release, Config Service support will be provided for turning traces on and off dynamically.
+
+== VIP Integration
+=== Maintaining VIP Status
+Because the VIP uses the response code of the healthcheck API to see if the host is in rotation, the VIP state is maintained in memory by the application process itself. *bir* and *oor* commands are provided by the init script to manage this status. The shallow health check results are considered as well along with the maintained VIP status.
+
+Currently, for taking the host out-of-rotation from behind the VIP, we update our status in the service to OOR, sleep for a few seconds to let the VIP pick it up, and then go down. Contributions to make this better are welcome.
+
+=== Auto BIR
+When the application starts up, it runs a deep health check after the server has been started and puts itself back in rotation if the deep health check succeeds.
+
+== Installation Support
+=== Installation Philosophy
+One package should be created for installation against which integration tests are run in Alpha stage, and the same package should be promoted to the Beta and Production environments.
+
+To enable this, support is provided to specify the deployment environment at the time of installation. So, in every stage, only the deployment environment changes which is used to select the right set of configuration for that stage using direct config service buckets, or confd or spring application profiles.
+
+=== Debian Package Creation
+You can create debian packages and upload them to our apt-repo using the gradle tasks mentioned above. Debian packages are created using Netflix's excellent nebula suite.
+
+The installation scripts take care of confd integration as well, and replace the token @deploymentEnv@ in your toml files with the deployment environment. Also, it replaces any @deploymentEnv@ tokens present in /usr/share/fk-my-project/service/run, which means that @deploymentEnv@ can be your spring profile as well. (Example: java -Dspring.profiles.active=@deploymentEnv@ $JAVA_OPTS -jar @destinationJarPath@)
+
+Use "sudo DEPLOYMENT_ENV=production apt-get install fk-my-project=version" based on the environment you're installing your service in. The DEPLOYMENT_ENV variable is selected as the active spring profile for your application using -Dspring.profiles.active=production. This means that you can use the same package in all your stages and change only the environment name at the time of installation. If you have problems with setting the DEPLOYMENT_ENV variable under sudo access manually, you can put the deployment environment name in the file /etc/default/fk-my-project-env and the script will pick it up from there.
+
+NOTE: Currently, you can set DEPLOYMENT_ENV at the time of installation, but setting it while running a manual command on our production boxes doesnt' seem to work. You can use the file-based approach as a workaround in that case.
+
+==== Artifacts and Token Replacement
+All the files in link:packaging/artifacts[] are copied to the root structure of the debian package. Tokens are of the form @token@. You can define tokens in the file/directory path of the files present in link:packaging/artifacts[], and also within the files themselves. These tokens will be replaced with corresponding values defined in link:packaging.gradle[].
+
+NOTE: You can exclude binary files from undergoing content filtering by adding matching filter substrings to the contentFilterExcludedFiles map in the debianConfig map in link:packaging.gradle[].
+
+=== Daemontools integration
+The web server process is managed by daemontool's supervise. You can find the supervise logs at /var/log/flipkart/supply-chain/fk-my-project/supervise-logs/current. The actual service files are present in /usr/share/fk-my-project/service/, and a symlink is created to /etc/service/fk-my-project for registering with daemontools at the time of installation.
+
+=== Deployment Environment-based Configuration
+==== Spring Profiles
+Have profiles with the same name as your deployment environments. The daemontools service run script selects the profile based on the $DEPLOYMENT_ENV variable (or /etc/default/fk-my-project-env content) specified at the time of installation.
+
+==== Environment Variables for the Service
+You can create your base variables under link:packaging/artifacts/usr/share/@packageName@/service/env[]. The daemontools convention is to create a file with the name as your environment variable name and the content being the environment variable value. See https://cr.yp.to/daemontools/faq/create.html#run and https://cr.yp.to/daemontools/envdir.html for more details.
+
+You can create overrides similar to spring profiles by creating a directory of the name env-$DEPLOYMENT_ENV (Ex: env-production, env-alpha) under link:packaging/artifacts/usr/share/@packageName@/service[] and putting the additional/overriding variables there. During the debian package installation, the files under the overriding directory will be copied to the main env directory and the main env directory will be used as the envdir input by the link:packaging/artifacts/usr/share/@packageName@/service/run[daemontools service run script].
+
+NOTE: Do NOT create directories under the env (or env-production/env-alpha/env-$DEPLOYMENT_ENV) directory as envdir runs into issues then. Have only files here.
+
+==== Daemontools Service Run Script Variables
+You might have to pass parameters to the daemontools service run script itself if you have to configure your container (For example, passing JVM args). You can do this by exporting environment variables from the file: link:packaging/artifacts/usr/share/@packageName@/service/run-env[]. To have environment-specific overrides, create files of the form run-env-$DEPLOYMENT_ENV (Ex: run-env-production, run-env-alpha) in the same directory. The link:packaging/artifacts/usr/share/@packageName@/service/run[daemontools service run script] sources the run-env file first followed by the run-env-$DEPLOYMENT_ENV file.
+
+=== Init script
+The init script manages the daemon tool integration for you and provides a bunch of useful commands by default. See link:packaging/artifacts/etc/init.d/@packageName@[] for an up-to-date list of commands available. Note that @packageName@ will be replaced with the actual debian package name by the Debian package generator at the time of generation. Some of the supported commands are:
+
+* *start:* Starts the service with auto-BIR
+* *stop:* Takes the service OOR and stops it
+* *restart:* Stop and start :)
+* *status:* Service status along with PID so that you don't have to grep processes!
+* *monitor:* Pings the healthcheck API till it returns 200 with a defined timeout and a maximum retry count. Useful for seeing if the service is up after a deployment
+* *bir:* Put the service back in rotation by setting the in-memory VIP status
+* *oor:* Set the in-memory VIP status to OOR
+* *elb_healthcheck:* Prints the current health status returned to the VIP
+* *shallow_healthcheck:* Runs a shallow healthcheck including the VIP status
+* *deep_healthcheck:* Runs a deep healthcheck without the VIP status
+* *tail_log:* Lets you tail your application log without changing to a deeply nested directory!
+* *ls_logs:* Lists the logs in the application's log directory
+* *installed_files:* Prints a list of all the files installed by this package
+
+Also, a symlink is created in /usr/bin to your package name at the time of installation. So, you can do things like *fk-my-project start* instead of */etc/init.d/fk-my-project start*
+
+=== Installation monitoring
+Use *fk-my-project monitor* after installation to check whether your service has started up or not. The installation does not fail if the service fails to start up.
+
+Your installation step now becomes: "*sudo DEPLOYMENT_ENV=production apt-get install fk-my-project=version && fk-my-project monitor*". If this command's exit code is 0, it means your service has been successfully installed. (Remember, you can set the deployment environment name in the file /etc/default/fk-my-project-env as well)
+
+=== Installation Path
+The jar file is installed in /usr/share/fk-project-name. The daemontools supervise daemon configuration is present in /usr/share/fk-project-name/service.
+
+=== Dependency Management
+Dependent debian packages are specified as part of the application's deb package itself in link:packaging.gradle[]. This enables you to just install the package on any machine without any further dependency on other configuration systems.
+

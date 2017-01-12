@@ -1,0 +1,43 @@
+
+// Reference: http://stackoverflow.com/questions/18715137/extract-common-methods-from-gradle-build-script
+
+def propertyOr(propertyName, defaultValue) {
+    
+    project.hasProperty(propertyName) ? project.property(propertyName) : defaultValue
+}
+
+def propertyOrError(propertyName) {
+
+    if(!project.hasProperty(propertyName)) {
+        println "You need to pass the value for: ${propertyName}. Use gradle <task> -P${propertyName}=value"
+    }
+    
+    project.property(propertyName)
+}
+
+def hyphenToDot(value) {
+
+    return value.replaceAll('-', '.')
+}
+
+def replaceTextProperties(text, evaluatedProperties) {
+    evaluatedProperties.inject(text, {t, k, v -> t.replace("@${k}@", v) })
+}
+
+def replaceFileProperties(f, evaluatedProperties) {
+    evaluatedProperties.inject(f.text, {t, k, v -> t.replace("@${k}@", v) })
+}
+
+def gitHeadRevision() {
+    "git log -n1 --format=%h".execute().text.replaceAll('\\s', '')
+}
+
+ext {
+    
+    propertyOr = this.&propertyOr
+    propertyOrError = this.&propertyOrError
+    hyphenToDot = this.&hyphenToDot
+    replaceTextProperties = this.&replaceTextProperties
+    replaceFileProperties = this.&replaceFileProperties
+    gitHeadRevision = this.&gitHeadRevision
+}

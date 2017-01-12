@@ -1,0 +1,18 @@
+// Sets default environment variables for the bootRun task
+
+
+// http://stackoverflow.com/questions/23367507/how-to-pass-system-property-to-gradle-task
+// Enables us to do things like: gradle bootRun -Dspring.profiles.active=alpha -DPACKAGE_NAME=fk-wms-rules-service
+bootRun {
+
+    // Set the default profile to "dev" for the bootRun task
+    systemProperty "spring.profiles.active", "dev"
+    
+    systemProperty "LOG_FILE", "local_logs/fk-${project.name}.log"
+    
+    systemProperty "SERVER_PORT", "8080"
+    
+    // Copy over the properties from -D command line flags for new or overriding flags
+    systemProperties System.properties
+}
+

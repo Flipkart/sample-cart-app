@@ -1,0 +1,10 @@
+#!/bin/sh -e
+
+# http://blog.teksol.info/pages/daemontools/best-practices.html
+
+exec 2>&1
+# Rotates the log every 10MB and keeps 5 old log files around
+exec \
+    setuidgid @userName@ \
+    multilog t s10485760 n5 '!tai64nlocal' "@superviseLogDirectory@"
+    

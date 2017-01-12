@@ -1,0 +1,5 @@
+# Specify additional environment variables or ones that will override the values
+# specified in run-env.
+# The daemontools service run script will first source ./run-env followed by ./run-env-$DEPLOYMENT_ENV
+
+export JAVA_OPTS="-Dsun.misc.URLClassPath.disableJarChecking=true -server"

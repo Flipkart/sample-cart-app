@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.unitils:unitils-core:3.4.2">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.unitils/unitils-core/3.4.2/58c0b1a5955ad91bfa15ebf61f3958e8d27d333d/unitils-core-3.4.2.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.unitils/unitils-core/3.4.2/fc5e197dd6bd878192160de14c2d7f686d221e41/unitils-core-3.4.2-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

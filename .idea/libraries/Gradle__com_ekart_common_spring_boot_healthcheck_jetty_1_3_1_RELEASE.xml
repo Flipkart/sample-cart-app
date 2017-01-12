@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: com.ekart.common:spring-boot-healthcheck-jetty:1.3.1.RELEASE">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.ekart.common/spring-boot-healthcheck-jetty/1.3.1.RELEASE/2d791b94588ae5cda0ce8058501431f823f1b82d/spring-boot-healthcheck-jetty-1.3.1.RELEASE.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.ekart.common/spring-boot-healthcheck-jetty/1.3.1.RELEASE/20932311114d82b3bfc77797b6a0f92333a29b20/spring-boot-healthcheck-jetty-1.3.1.RELEASE-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

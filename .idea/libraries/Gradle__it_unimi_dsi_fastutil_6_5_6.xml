@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: it.unimi.dsi:fastutil:6.5.6">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/it.unimi.dsi/fastutil/6.5.6/7b644ef32b59d4f27004da19dd35f9040b726ec/fastutil-6.5.6.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/it.unimi.dsi/fastutil/6.5.6/63a561b3a690790f6a6949e5c54e562d17466b8e/fastutil-6.5.6-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

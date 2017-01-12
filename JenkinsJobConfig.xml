@@ -1,0 +1,31 @@
+<flow-definition plugin="workflow-job@2.1">
+    <actions/>
+    <description/>
+    <keepDependencies>false</keepDependencies>
+    <properties>
+        <org.jenkinsci.plugins.periodicreincarnation.JobLocalConfiguration plugin="periodic-reincarnation@1.9">
+            <isLocallyConfigured>false</isLocallyConfigured>
+            <isLocallyDeactivated>false</isLocallyDeactivated>
+        </org.jenkinsci.plugins.periodicreincarnation.JobLocalConfiguration>
+    </properties>
+    <definition class="org.jenkinsci.plugins.workflow.cps.CpsScmFlowDefinition" plugin="workflow-cps@2.2">
+        <scm class="hudson.plugins.git.GitSCM" plugin="git@2.4.2">
+            <configVersion>2</configVersion>
+            <userRemoteConfigs>
+                <hudson.plugins.git.UserRemoteConfig>
+                    <url>https://github.com/Flipkart/ekart-starter-kit.git</url>
+                </hudson.plugins.git.UserRemoteConfig>
+            </userRemoteConfigs>
+            <branches>
+                <hudson.plugins.git.BranchSpec>
+                    <name>*/master</name>
+                </hudson.plugins.git.BranchSpec>
+            </branches>
+            <doGenerateSubmoduleConfigurations>false</doGenerateSubmoduleConfigurations>
+            <submoduleCfg class="list"/>
+            <extensions/>
+        </scm>
+        <scriptPath>Jenkinsfile</scriptPath>
+    </definition>
+    <triggers/>
+</flow-definition>

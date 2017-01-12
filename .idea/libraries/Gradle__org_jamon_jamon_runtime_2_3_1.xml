@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: org.jamon:jamon-runtime:2.3.1">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jamon/jamon-runtime/2.3.1/ae23df9c0953b12ba1b799e42ebd1a281fabcd8c/jamon-runtime-2.3.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jamon/jamon-runtime/2.3.1/4cd17c50c73da9aadf49115f3f7f05dbf7df6521/jamon-runtime-2.3.1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

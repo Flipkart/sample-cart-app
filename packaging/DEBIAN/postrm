@@ -1,0 +1,21 @@
+#!/bin/sh -e
+
+if [ -f "/etc/init.d/cosmos-statsd" ]; then
+    echoYellow "Restarting cosmos-statsd..."
+    /etc/init.d/cosmos-statsd restart
+fi
+        
+if [ -f "/etc/init.d/rsyslog" ]; then
+    echoYellow "Restarting rsyslog..."
+    /etc/init.d/rsyslog restart
+fi
+
+if [ -f "/etc/init.d/fk-config-service-confd" ]; then
+    echoYellow "Restarting confd..."
+    /etc/init.d/fk-config-service-confd restart
+fi
+
+echoGreen "See you soon! Peace..."
+echoNinja
+
+

@@ -1,0 +1,34 @@
+#!/bin/sh -e
+
+        # Reading from the file is a temporary workaround till we have access to production machines
+        # and there is no env_keep setting for the DEPLOYMENT_ENV environment variable.
+        # http://chasemp.github.io/2013/02/25/allowing-env-magic-via-sudo/
+        deployment_env_file="/etc/default/@packageName@-env"
+        [ -z "$DEPLOYMENT_ENV" ] && [ -f "$deployment_env_file" ] && DEPLOYMENT_ENV=$(cat "$deployment_env_file")
+            
+        # http://stackoverflow.com/questions/307503/whats-the-best-way-to-check-that-environment-variables-are-set-in-unix-shellscr
+        : "${DEPLOYMENT_ENV:?Error - DEPLOYMENT_ENV has not been set. Use the command [sudo DEPLOYMENT_ENV=production|alpha apt-get install @packageName@] while installing or set the required value in the file $deployment_env_file before installing}"
+        
+        echoGreen "Using deployment environment: $DEPLOYMENT_ENV"
+        
+        USER_NAME="@userName@"
+        USER_ID="@userId@"
+        GROUP_NAME="@groupName@"
+        GROUP_ID="@groupId@"
+        
+        echoYellow "Checking for users and groups..."
+        if ! getent group $GROUP_NAME > /dev/null; then
+            groupadd -g $GROUP_ID $GROUP_NAME
+            echoGreen "Group: $GROUP_NAME with id: $GROUP_ID created"
+        else
+            echoGreen "Group $GROUP_ID:$GROUP_NAME already found. Not creating."
+        fi
+        
+        if ! getent passwd $USER_NAME > /dev/null; then
+            useradd -g $GROUP_ID -u $USER_ID $USER_NAME
+            echoGreen "User: $USER_NAME with id: $USER_ID added to group: $GROUP_NAME"
+        else
+            echoGreen "User $USER_ID:$USER_NAME already found under group: $GROUP_NAME. Not creating."
+        fi
+        
+        exit 0

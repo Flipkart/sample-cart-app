@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: com.flipkart.restbus.hibernate:hibernate-restbus-client:2.0.0-tds">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.flipkart.restbus.hibernate/hibernate-restbus-client/2.0.0-tds/617452ab61fc4f51e8212398b4f8d7367aed74b0/hibernate-restbus-client-2.0.0-tds.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.flipkart.restbus.hibernate/hibernate-restbus-client/2.0.0-tds/744ae6510bed8019b121c8b0299aabb4ba455e3c/hibernate-restbus-client-2.0.0-tds-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

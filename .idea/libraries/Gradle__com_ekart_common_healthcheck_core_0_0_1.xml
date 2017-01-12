@@ -1,0 +1,11 @@
+<component name="libraryTable">
+  <library name="Gradle: com.ekart.common:healthcheck-core:0.0.1">
+    <CLASSES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.ekart.common/healthcheck-core/0.0.1/55d61918c392ba60af4673f8ded32404c7d1494f/healthcheck-core-0.0.1.jar!/" />
+    </CLASSES>
+    <JAVADOC />
+    <SOURCES>
+      <root url="jar://$USER_HOME$/.gradle/caches/modules-2/files-2.1/com.ekart.common/healthcheck-core/0.0.1/ed51f3753d065ea4ea84501e4ad5f073b16e9f16/healthcheck-core-0.0.1-sources.jar!/" />
+    </SOURCES>
+  </library>
+</component>

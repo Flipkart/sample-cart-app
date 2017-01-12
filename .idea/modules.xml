@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="ProjectModuleManager">
+    <modules>
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/springbootjetty-sample.iml" filepath="$PROJECT_DIR$/.idea/modules/springbootjetty-sample.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/springbootjetty-sample_integrationTest.iml" filepath="$PROJECT_DIR$/.idea/modules/springbootjetty-sample_integrationTest.iml" group="springbootjetty-sample" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/springbootjetty-sample_main.iml" filepath="$PROJECT_DIR$/.idea/modules/springbootjetty-sample_main.iml" group="springbootjetty-sample" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/modules/springbootjetty-sample_test.iml" filepath="$PROJECT_DIR$/.idea/modules/springbootjetty-sample_test.iml" group="springbootjetty-sample" />
+    </modules>
+  </component>
+</project>
