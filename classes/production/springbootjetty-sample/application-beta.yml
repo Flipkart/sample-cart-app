@@ -1,5 +1,0 @@
-statsd:
-  prefix: beta
-  
-periodicHealthCheck:
-  fixedDelayMs: 10000 
