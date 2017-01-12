@@ -1,2 +1,0 @@
-//Constant used for Jenkins Integration
-project.ext.set("JENKINS_URL","http://ekart-ops-0005.nm.flipkart.com:8080/")
